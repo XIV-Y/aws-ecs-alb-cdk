@@ -1,14 +1,37 @@
-# Welcome to your CDK TypeScript project
+# ALB + ECS Fargate with Auto Scaling
+Application Load Balancer (ALB) とECS Fargateを使用してNode.jsアプリケーションをデプロイし、CPU使用率ベースの自動スケーリングを実装した環境を構築。
 
-This is a blank project for CDK development with TypeScript.
+## 前提条件
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+- AWS CLIが設定済みであること
+- AWS CDKがインストール済みであること
+- 必要なAWS権限が設定されていること
 
-## Useful commands
+## 手順
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
+### デプロイ実行
+```bash
+cdk deploy
+```
+
+### デプロイ後の出力値確認
+```
+SimpleAlbEcsStack.LoadBalancerDNS
+SimpleAlbEcsStack.ApiEndpoint
+```
+
+### アプリケーションへのアクセス
+
+#### API情報エンドポイントへのアクセス
+ALB により `instance` の値が切り替わることを確認
+```bash
+curl http://<LoadBalancer-DNS>/api/info
+```
+
+### 自動スケーリングのテスト
+
+#### 負荷をかけてスケーリングを確認
+デプロイ後の出力から取得したコマンドを実行：
+```bash
+while true; do curl -s http://<LoadBalancer-DNS>/api/load > /dev/null; done
+```
