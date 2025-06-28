@@ -3,6 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 
 import { Construct } from 'constructs';
 
@@ -100,6 +101,113 @@ export class SimpleAlbEcsStack extends cdk.Stack {
       defaultTargetGroups: [targetGroup]
     });
 
+    // // WAF v2 Web ACL作成（日本以外からのアクセスをブロック）
+    // const webAcl = new wafv2.CfnWebACL(this, 'WebACL', {
+    //   name: 'JapanOnlyWebACL',
+    //   scope: 'REGIONAL',
+    //   defaultAction: {
+    //     block: {} // デフォルトで全ブロック
+    //   },
+    //   rules: [
+    //     {
+    //       name: 'AllowJapanOnly',
+    //       priority: 1,
+    //       statement: {
+    //         geoMatchStatement: {
+    //           countryCodes: ['US'] // 日本のみ許可
+    //         }
+    //       },
+    //       action: {
+    //         allow: {} // 日本からのアクセスは許可
+    //       },
+    //       visibilityConfig: {
+    //         sampledRequestsEnabled: true,
+    //         cloudWatchMetricsEnabled: true,
+    //         metricName: 'AllowJapanOnlyRule'
+    //       }
+    //     },
+    //     {
+    //       name: 'AWSManagedRulesCommonRuleSet',
+    //       priority: 2,
+    //       overrideAction: {
+    //         none: {}
+    //       },
+    //       statement: {
+    //         managedRuleGroupStatement: {
+    //           vendorName: 'AWS',
+    //           name: 'AWSManagedRulesCommonRuleSet'
+    //         }
+    //       },
+    //       visibilityConfig: {
+    //         sampledRequestsEnabled: true,
+    //         cloudWatchMetricsEnabled: true,
+    //         metricName: 'CommonRuleSetMetric'
+    //       }
+    //     }
+    //   ],
+    //   visibilityConfig: {
+    //     sampledRequestsEnabled: true,
+    //     cloudWatchMetricsEnabled: true,
+    //     metricName: 'JapanOnlyWebACL'
+    //   }
+    // });
+
+    // WAF v2 Web ACL作成（アメリカ以外からのアクセスをブロック）
+    const webAcl = new wafv2.CfnWebACL(this, 'WebACL', {
+      name: 'USOnlyWebACL',
+      scope: 'REGIONAL',
+      defaultAction: {
+        block: {} // デフォルトで全ブロック
+      },
+      rules: [
+        {
+          name: 'AllowUSOnly',
+          priority: 1,
+          statement: {
+            geoMatchStatement: {
+              countryCodes: ['US'] // アメリカのみ許可
+            }
+          },
+          action: {
+            allow: {} // アメリカからのアクセスは許可
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: 'AllowUSOnlyRule'
+          }
+        },
+        {
+          name: 'AWSManagedRulesCommonRuleSet',
+          priority: 2,
+          overrideAction: {
+            none: {}
+          },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: 'AWS',
+              name: 'AWSManagedRulesCommonRuleSet'
+            }
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: 'CommonRuleSetMetric'
+          }
+        }
+      ],
+      visibilityConfig: {
+        sampledRequestsEnabled: true,
+        cloudWatchMetricsEnabled: true,
+        metricName: 'USOnlyWebACL'
+      }
+    });
+
+    new wafv2.CfnWebACLAssociation(this, 'WebACLAssociation', {
+      resourceArn: alb.loadBalancerArn,
+      webAclArn: webAcl.attrArn
+    });
+
     // ECSサービス作成
     const service = new ecs.FargateService(this, 'Service', {
       cluster: cluster,
@@ -141,6 +249,11 @@ export class SimpleAlbEcsStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'StressTestCommand', {
       value: `while true; do curl -s http://${alb.loadBalancerDnsName}/api/load > /dev/null; done`,
       description: 'Run this command to trigger AutoScaling (Ctrl+C to stop)'
+    });
+
+    new cdk.CfnOutput(this, 'WebACLArn', {
+      value: webAcl.attrArn,
+      description: 'WAF Web ACL ARN'
     });
   }
 }
