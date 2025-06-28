@@ -2,7 +2,7 @@
   "name": "alb-ecs",
   "version": "0.1.0",
   "bin": {
-    "alb-ecs": "bin/alb-ecs.js"
+    "alb-ecs": "bin/aws.ts"
   },
   "scripts": {
     "build": "tsc",
