@@ -1,7 +1,7 @@
 # ALB + ECS Fargate with Auto Scaling
-Application Load Balancer (ALB) とECS Fargateを使用してNode.jsアプリケーションをデプロイし、CPU使用率ベースの自動スケーリングを実装した環境を構築。
+Application Load Balancer (ALB) とECS Fargateを使用してNode.jsアプリケーションをデプロイし、CPU使用率ベースの自動スケーリングを実装した環境を構築。WAF v2でUS（もしくはJP）地域からのアクセスのみ許可しています。
 
-![名称未設定ファイル drawio (2)](https://github.com/user-attachments/assets/f08c4019-93e6-4fcd-b5bc-14a788d7f8d1)
+![名称未設定ファイル drawio](https://github.com/user-attachments/assets/f11615a2-e62c-4fea-b698-03a4261b1cb0)
 
 ## 前提条件
 
